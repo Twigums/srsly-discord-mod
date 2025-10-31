@@ -95,6 +95,12 @@ class Bot:
         else:
             return False
 
+    def _clean_buffer(self) -> None:
+        self.showing_wrong_message = False
+        self.previous_answer = None
+
+        return None
+
     def start(self) -> None:
         self.bot.run(self.token)
 
@@ -302,9 +308,7 @@ class Bot:
                             await message.channel.send(random.choice(self.encouraging_messages))
                             _, correct_readings = self.process_answer(self.previous_answer, True)
                             embed = self.update_embed()
-
-                            self.showing_wrong_message = False
-                            self.previous_answer = None
+                            self._clean_buffer()
 
                         case "add":
                             await message.channel.send(f"Added {self.previous_answer} as a valid response.")
@@ -317,16 +321,12 @@ class Bot:
                             self.srs_app.add_valid_response(self.previous_answer, current_item)
                             _, correct_readings = self.process_answer(self.previous_answer, True)
                             embed = self.update_embed()
-
-                            self.showing_wrong_message = False
-                            self.previous_answer = None
+                            self._clean_buffer()
 
                         case "re":
                             await message.channel.send("redo")
                             embed = self.update_embed()
-
-                            self.showing_wrong_message = False
-                            self.previous_answer = None
+                            self._clean_buffer()
 
                         case _:
                             await message.channel.send("Please type either 'ok', 'add', or 're'.")

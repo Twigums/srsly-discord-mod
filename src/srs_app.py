@@ -77,14 +77,16 @@ class SrsApp:
         # i guess another solution can be retrieving 2 tables using pd and operating on them using pd
         try:
             self.conn = sqlite3.connect(self.path_to_full_db)
+            self.conn.execute("PRAGMA journal_mode = WAL")
+            self.conn.execute("PRAGMA busy_timeout = 30000")
 
         except sqlite3.Error as e:
-            raise f"Conn failed: {e}"
+            raise Exception(f"Conn failed: {e}")
 
             return False
 
         except FileNotFoundError as e:
-            raise "File not found: {e}"
+            raise Exception("File not found: {e}")
 
             return False
 

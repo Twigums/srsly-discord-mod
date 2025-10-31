@@ -334,7 +334,7 @@ class Bot:
                     if embed:
                         await message.channel.send(embed = embed)
 
-                if content != self.stop_command:
+                elif content != self.stop_command:
 
                     # will set self.previous_answer to content (either in kana or processed)
                     is_correct, correct_readings = self.process_answer(content, False)

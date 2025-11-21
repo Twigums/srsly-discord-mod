@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional, Dict, Literal, List
+from typing import Optional, Dict, Literal, List, Tuple
 
 
 # init config
@@ -29,17 +29,17 @@ class SrsConfig:
 # colors
 @dataclass
 class Colors:
-    vocab: str = "#aa2eff"
-    kanji: str = "#2e67ff"
-    kana: str = "#393939"
-    romaji: str = "#e4e4e4"
+    vocab: Tuple[int] = (170, 46, 255) # purple
+    kanji: Tuple[int] = (46, 103, 255) # blue
+    kana: Tuple[int] = (57, 57, 57) # dark gray
+    romaji: Tuple[int] = (228, 228, 228) # light gray
 
     # list of 5 progressively more greens for stats
-    progress: List[str] = None
+    progress: List[Tuple[int]] = None
 
     def __post_init__(self):
         if self.progress is None:
-            self.progress = ["#cffad1", "#9ff6a3", "#6ff176", "#3fed48", "#0fe81a"]
+            self.progress = [(207, 250, 209), (159, 246, 163), (111, 241, 118), (63, 237, 72), (15, 232, 26)]
 
 # card type
 class Card:

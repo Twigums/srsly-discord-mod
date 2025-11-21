@@ -151,7 +151,7 @@ class Bot:
         embed = discord.Embed(
             title = display_text,
             description = separator,
-            color = discord.Color.from_str(review_color)
+            color = discord.Color.from_rgb(review_color[0], review_color[1], review_color[2])
         )
         embed.set_footer(text = f"{self.srs_app.current_completed} / {self.srs_app.len_review_ids}")
 
@@ -315,9 +315,10 @@ class Bot:
 
                             current_item = {
                                 "card_type": self.current_card.card_type,
-                                "ID": self.current_card.item_id
+                                "ID": self.current_card.item_id,
+                                "Readings": self.current_card.readings,
+                                "Meanings": self.current_card.meanings
                             }
-
                             self.srs_app.add_valid_response(self.previous_answer, current_item)
                             _, correct_readings = self.process_answer(self.previous_answer, True)
                             embed = self.update_embed()
@@ -428,7 +429,7 @@ class Bot:
                 embed = discord.Embed(
                     title = name,
                     description = sum([grade_values[grade] for grade in grades]),
-                    color = discord.Color.from_str(color)
+                    color = discord.Color.from_rgb(color[0], color[1], color[2])
                 )
 
                 await ctx.send(embed = embed)
@@ -436,7 +437,7 @@ class Bot:
             embed = discord.Embed(
                 title = "# of Reviews Due",
                 description = f"{len(df_reviews)} / {df_today_counts.values[0][0]}",
-                color = discord.Color.ash_embed()
+                color = discord.Color.from_rgb(55, 55, 62) # discord's ash embed
             )
 
             ratio = df_ratio.values.item()

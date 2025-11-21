@@ -11,7 +11,7 @@ entries_before_commit = 10
 # path to sqlite databases
 # srs_db contains user data
 # full_db contains dictionary data
-path_to_srs_db = "./db/SrsDatabase.sqlite"
+path_to_srs_db = "./db/srs.db"
 path_to_full_db = "./db/KanjiDatabase.sqlite"
 
 # srs review intervals

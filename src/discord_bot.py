@@ -4,6 +4,7 @@ import re
 import random
 import pandas as pd
 
+from enum import Enum, auto
 from discord.ext import commands
 from typing import Optional
 from pyokaka import okaka
@@ -29,16 +30,20 @@ def romaji_to_kana(string):
 
     return kana
 
+class AppState(Enum):
+    RUNNING = auto()
+    WILL_STOP = auto()
+    STOPPED = auto()
+
 class Bot:
     def __init__(self, config: BotConfig, colors: Colors):
         intents = discord.Intents.default()
         intents.message_content = True
 
-        command_prefix = config.prefix
-        self.stop_command = command_prefix + "stop"
+        self.command_prefix = config.prefix
 
         self.bot = commands.Bot(
-            command_prefix = command_prefix,
+            command_prefix = self.command_prefix,
             intents = intents
         )
 
@@ -50,11 +55,11 @@ class Bot:
         self.colors = colors
         self.current_card = Card()
 
-        self.review_active = False
         self.review_channel = None
         self.item_dict = None
         self.showing_wrong_message = False
         self.previous_answer = None
+        self.state = AppState.STOPPED
 
         # thanks claude
         self.encouraging_messages = [
@@ -113,7 +118,7 @@ class Bot:
         if current_item is None:
 
             # set everything back to default
-            self.review_active = False
+            self.state = AppState.STOPPED
             self.review_channel = None
             self.srs_app.force_commit()
 
@@ -295,7 +300,7 @@ class Bot:
                 return None
 
             # if review is active in this channel, print res
-            if self.review_active and message.channel == self.review_channel:
+            if self.state in [AppState.RUNNING, AppState.WILL_STOP] and message.channel == self.review_channel:
                 embed = None
 
                 # term msgs
@@ -335,20 +340,29 @@ class Bot:
                     if embed:
                         await message.channel.send(embed = embed)
 
-                elif content != self.stop_command:
+                    return None
+
+                # don't process any commands
+                elif content.startswith(self.command_prefix):
+                    await self.bot.process_commands(message)
+
+                    return None
+
+                # "otherwise"
+                else:
 
                     # will set self.previous_answer to content (either in kana or processed)
                     is_correct, correct_readings = self.process_answer(content, False)
-
+    
                     if is_correct:
                         await message.channel.send(":o:")
                         await message.channel.send(correct_readings)
                         embed = self.update_embed()
-
+    
                     else:
                         embed = self.wrong_embed(content, correct_readings)
                         self.showing_wrong_message = True
-
+    
                     await message.channel.send(embed = embed)
 
             if self.debug_mode:
@@ -372,6 +386,13 @@ class Bot:
         # if we did, then keep going
         @self.bot.command(name = "start")
         async def start_review(ctx: commands.Context) -> None:
+            
+            # don't run if app is already started
+            if self.state == AppState.RUNNING:
+                await ctx.send("Already started...")
+
+                return None
+
             if not self._start_review():
                 await ctx.send("No reviews!")
 
@@ -379,8 +400,8 @@ class Bot:
 
             self.update_embed()
 
-            self.review_active = True
             self.review_channel = ctx.channel
+            self.state = AppState.RUNNING
 
             await ctx.send("Review session started!")
             await ctx.send(f"You have **{self.srs_app.len_review_ids}** reviews due.")
@@ -395,12 +416,15 @@ class Bot:
         # "stop" should issue a command to stop pushing stuff into the queue
         @self.bot.command(name = "stop")
         async def stop_review(ctx: commands.Context) -> None:
-            if not self.review_active:
-                await ctx.send("Nothing to stop!")
+
+            # if app is either flagged to stop or is stopped, then no point in stopping
+            if self.state in [AppState.WILL_STOP, AppState.STOPPED]:
+                await ctx.send("Already will/has stopped.")
 
                 return None
 
             self.srs_app.stop_updating_review = True
+            self.state = AppState.WILL_STOP
 
             await ctx.send("Will quit after the remaining items are completed.")
 

@@ -324,8 +324,23 @@ class Bot:
                                 "Readings": self.current_card.readings,
                                 "Meanings": self.current_card.meanings
                             }
+
+                            # same as srsly i guess...
                             self.srs_app.add_valid_response(self.previous_answer, current_item)
-                            _, correct_readings = self.process_answer(self.previous_answer, True)
+                            self.srs_app.current_reviews.pop()
+                            
+                            self.item_dict[self.current_card.item_id].append(1)
+
+                            # please for the love of god make this more optimized
+                            if sum(self.item_dict[self.current_card.item_id]) == 2:
+                                if len(self.item_dict[self.current_card.item_id]) == 2:
+                                    self.srs_app.update_review_item(self.current_card.item_id, True)
+                                else:
+                                    self.srs_app.update_review_item(self.current_card.item_id, False)
+                                
+                                del self.item_dict[self.current_card.item_id]
+                                self.srs_app.update_review_session()
+
                             embed = self.update_embed()
                             self._clean_buffer()
 

@@ -390,26 +390,26 @@ class Bot:
     def setup_commands(self) -> None:
 
         # self test
-        @self.bot.command(name = "ping")
+        @self.bot.slash_command(name = "ping", description = "Check if the bot is alive.")
         async def ping(ctx: commands.Context) -> None:
-            await ctx.send("pong")
+            await ctx.respond("pong")
 
             return None
 
         # "start" should first check if we have stuff in our queue
         # if we don't then kick the user out
         # if we did, then keep going
-        @self.bot.command(name = "start")
+        @self.bot.slash_command(name = "start", description = "Start a review session.")
         async def start_review(ctx: commands.Context) -> None:
             
             # don't run if app is already started
             if self.state == AppState.RUNNING:
-                await ctx.send("Already started...")
+                await ctx.respond("Already started...")
 
                 return None
 
             if not self._start_review():
-                await ctx.send("No reviews!")
+                await ctx.respond("No reviews!")
 
                 return None
 
@@ -418,9 +418,9 @@ class Bot:
             self.review_channel = ctx.channel
             self.state = AppState.RUNNING
 
-            await ctx.send("Review session started!")
+            await ctx.respond("Review session started!")
             await ctx.send(f"You have **{self.srs_app.len_review_ids}** reviews due.")
-            await ctx.send("Type `!stop` to end the session.")
+            await ctx.send("Type `/stop` to end the session.")
 
             embed = self.update_embed()
 
@@ -429,24 +429,24 @@ class Bot:
             return None
 
         # "stop" should issue a command to stop pushing stuff into the queue
-        @self.bot.command(name = "stop")
+        @self.bot.slash_command(name = "stop", description = "Stop current review session.")
         async def stop_review(ctx: commands.Context) -> None:
 
             # if app is either flagged to stop or is stopped, then no point in stopping
             if self.state in [AppState.WILL_STOP, AppState.STOPPED]:
-                await ctx.send("Already will/has stopped.")
+                await ctx.respond("Already will/has stopped.")
 
                 return None
 
             self.srs_app.stop_updating_review = True
             self.state = AppState.WILL_STOP
 
-            await ctx.send("Will quit after the remaining items are completed.")
+            await ctx.respond("Will quit after the remaining items are completed.")
 
             return None
 
         # "stats" should show important stats to the user
-        @self.bot.command(name = "stats")
+        @self.bot.slash_command(name = "stats", description = "Show stats of current deck.")
         async def show_stats(ctx: commands.Context) -> None:
 
             # im not gonna make these a config...
@@ -460,9 +460,12 @@ class Bot:
             df_reviews = self.srs_app.get_due_reviews()
 
             if grade_values == []:
-                await ctx.send("Start adding items and reviewing to see stats!")
+                await ctx.respond("Start adding items and reviewing to see stats!")
 
                 return None
+
+            # to prevent "failed interaction" when using slash commands
+            await ctx.defer()
 
             for name, color, grades in zip(level_names, self.colors.progress, level_grades):
                 embed = discord.Embed(
